@@ -5,6 +5,7 @@ description = "Metric of user influence in Online Social Networks"
 authors = ["Nouamane Arhachoui <nouamane.arhachoui@lip6.fr>"]
 license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/NouamaneA/psi-score"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
