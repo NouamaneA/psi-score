@@ -8,6 +8,14 @@ readme = "README.md"
 homepage = "https://github.com/NouamaneA/psi-score"
 repository = "https://github.com/NouamaneA/psi-score"
 keywords = ["graph algorithms", "network science", "markov chain", "social networks", "pagerank"]
+include = [
+    "AUTHORS.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "README.md",
+    "tests"
+]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
