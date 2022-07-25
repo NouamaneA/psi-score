@@ -1,6 +1,9 @@
 # Psi-score
 
-Metric of user influence in Online Social Networks
+$\psi$-score: Metric of user influence in Online Social Networks
+
+## Requirements
+* Python >=3.9,<3.11
 
 ## Installation
 
@@ -22,10 +25,18 @@ array([0.21158803, 0.35253745, 0.28798439, 0.14789014])
 >>> np.round(scores, 2)
 array([0.21, 0.35, 0.29, 0.15])
 ```
-You can use another algorithm than the default one as well as the tolerance:
+You can use another algorithm and change some parameters:
 ```python
 >>> psiscore = PsiScore(solver='power_nf', n_iter=500, tol=1e-3)
->>> scores = psiscore.fit_transform(adjacency, lambdas, mus)
+>>> scores = psiscore.fit_transform(adjacency, lambdas, mus, ps=[1], qs=[0, 3])
+```
+The ``ps`` and ``qs`` parameters allows to have some chosen ``p_i`` and ``q_i`` vectors (only with the ``push`` and ``power_nf`` methods):
+```python
+>>> psiscore.P
+{1: array([0.5333334 , 0.1681094 , 0.46801851, 0.34442264])}
+>>> psiscore.Q
+{0: array([0.46164044, 0.0514935 , 0.02798624, 0.30484491]),
+ 3: array([0.13087053, 0.01616898, 0.01850541, 0.42554885])}
 ```
 
 ## License

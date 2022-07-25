@@ -82,7 +82,8 @@ def wall_steady_state(i, c, p_i, d):
 def get_psi_score(
         adjacency: dict[list], ls: Union[list, np.ndarray], 
         ms: Union[list, np.ndarray], n_iter: int =500, 
-        tol: float =1e-4, solver: str ='power_psi'
+        tol: float =1e-4, solver: str ='power_psi',
+        ps: list[int] =[], qs: list[int] =[] 
     ) -> tuple:
     """ Solves the Psi-score problem with a chosen algorithm.
 
@@ -102,9 +103,13 @@ def get_psi_score(
 
     n_iter: int, optional
         Maximum number of iterations for Power-Psi and Power-NF, default=500
-
+        
     tol: float, optional
         Tolerance for the convergence of the algorithms (except for scipy's solver), default=1e-4
+    ps: list
+        List of nodes ``i`` for which we want to have the ``p_i`` with the push and power_nf methods
+    qs: list
+        List of nodes ``i`` for which we want to have the ``q_i`` with the push and power_nf methods
 
     Returns
     -------
@@ -116,6 +121,10 @@ def get_psi_score(
         Number of messages (or update in the Psi-score vector), ``None`` for the scipy solver.
     n_mult: int or None
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
+    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
+        The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
+    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
+        The ``q_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
     
     References
     ----------
@@ -146,6 +155,8 @@ def get_psi_score(
     elif solver == 'power_nf':
         t = time()
         Psi = []
+        P = {}
+        Q = {}
         for i in progressbar(range(N)):
             b_i = B.dot(X(i, N))
             p_i, n_msg_i, n_mult_i = power_newsfeed(A, b_i, Deg, n_iter=n_iter, tol=tol)
@@ -153,6 +164,12 @@ def get_psi_score(
             n_msg += n_msg_i
             q_i = wall_steady_state(i, c, p_i, d)
             Psi.append(1/N * np.sum(q_i))
+            if i in ps:
+                P[i] = p_i
+            if i in qs:
+                Q[i] = q_i
+        t = time() - t
+        return Psi, t, n_msg, n_mult, P, Q
 
     elif solver == 'power_psi':
         At = A.T 
@@ -174,6 +191,8 @@ def get_psi_score(
 
     elif solver == 'push':
         Psi = []
+        P = {}
+        Q = {}
         tol = tol * (1 - np.max(A.sum(axis=1)))
         for i in progressbar(range(N)):
             if i in B_t:
@@ -183,9 +202,13 @@ def get_psi_score(
                 p_i = dict()
             q_i = wall_steady_state(i, c, p_i, d)
             Psi.append(1/N * sum(q_i.values()))
+            if i in ps:
+                P[i] = p_i
+            if i in qs:
+                Q[i] = q_i
         t = time() - t
         Psi = np.array(Psi)
-        return Psi, t, n_msg
+        return Psi, t, n_msg, P, Q
     
     else:
         raise ValueError('Unknown solver.')

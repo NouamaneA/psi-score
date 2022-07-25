@@ -31,6 +31,10 @@ class PsiScore:
         Number of messages (or update in the Psi-score vector), ``None`` for the scipy solver.
     n_mult: int or None
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
+    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
+        The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
+    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
+        The ``q_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
 
     Example
     -------
@@ -61,8 +65,11 @@ class PsiScore:
         self.time = None
         self.n_msg = None
         self.n_mult = None
+        self.P = None
+        self.Q = None
 
-    def fit(self, adjacency: dict[list], lambdas: Union[list, np.ndarray], mus: Union[list, np.ndarray]) -> 'PsiScore':
+    def fit(self, adjacency: dict[list], lambdas: Union[list, np.ndarray], mus: Union[list, np.ndarray],
+            ps: list[int] =[], qs: list[int] =[]) -> 'PsiScore':
         """Fit algorithm.
         
         Parameters
@@ -73,11 +80,17 @@ class PsiScore:
             Posting activity of each node.
         mus:
             Re-posting activity of each node.
+        ps: list
+            List of nodes ``i`` for which we want to have the ``p_i`` with the push and power_nf methods
+        qs: list
+            List of nodes ``i`` for which we want to have the ``q_i`` with the push and power_nf methods
         """
         if self.solver == 'scipy':
             self.scores, self.time = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
         elif self.solver == 'push':
-            self.scores, self.time, self.n_msg = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+            self.scores, self.time, self.n_msg, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
+        elif self.solver == 'power_nf':
+            self.scores, self.time, self.n_msg, self.n_mult, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
         else:
             self.scores, self.time, self.n_msg, self.n_mult = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
         return self
