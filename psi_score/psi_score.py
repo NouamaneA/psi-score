@@ -1,5 +1,5 @@
 import numpy as np
-from psi_score.psi_solvers import get_psi_score
+from psi_score.linalg.psi_solvers import get_psi_score
 from typing import Union
 
 class PsiScore:
@@ -13,12 +13,13 @@ class PsiScore:
         * ``'power_psi'``, power iterations for the Psi_score vector.
         * ``'power_nf'``, for each ``i`` it uses power iterations for the vector ``p_i``, the expected probabilities to find a post of origin ``i`` on other users' NewsFeeds.
         * ``'scipy'``, use the linear system solver from the scipy.sparse library.
+        * ``'push'``, use push-based method for each vector ``p_i``.
 
     n_iter: int, optional
-        Maximum number of iterations for Power-Psi and Power-NF, default=1000
+        Maximum number of iterations for Power-Psi and Power-NF, default=500
 
     tol: float, optional
-        Tolerance for the convergence of Power-Psi and Power-NF, default=1e-6
+        Tolerance for the convergence of the algorithms (except for scipy's solver), default=1e-4
 
     Attributes
     ----------
@@ -51,7 +52,7 @@ class PsiScore:
       https://doi.org/10.1109/tnet.2021.3085201
     """
 
-    def __init__(self, solver: str = 'power_psi', n_iter: int = 1000, tol: float = 1e-6):
+    def __init__(self, solver: str = 'power_psi', n_iter: int = 500, tol: float = 1e-4):
         super(PsiScore, self).__init__()
         self.solver = solver
         self.n_iter = n_iter
@@ -75,8 +76,10 @@ class PsiScore:
         """
         if self.solver == 'scipy':
             self.scores, self.time = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+        elif self.solver == 'push':
+            self.scores, self.time, self.n_msg = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
         else:
-            self.scores, self.time, self.n_msg, self.n_mult = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)        
+            self.scores, self.time, self.n_msg, self.n_mult = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
         return self
 
     def fit_transform(self, *args, **kwargs) -> np.ndarray:
