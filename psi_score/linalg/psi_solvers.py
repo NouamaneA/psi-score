@@ -186,6 +186,8 @@ def get_psi_score(
             if gap < tol:
                 Psi = 1/N * (B.T.dot(s) + d)
                 n_mult += 1
+                t = time() - t
+                return Psi, t, n_msg, n_mult
         if gap >= tol:
             raise RuntimeError(f'Power-Psi error: failed to converge in {n_iter} iterations.')
 
@@ -213,5 +215,3 @@ def get_psi_score(
     else:
         raise ValueError('Unknown solver.')
 
-    t = time() - t
-    return Psi, t, n_msg, n_mult
