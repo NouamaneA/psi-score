@@ -14,6 +14,7 @@ class PsiScore:
         * ``'power_nf'``, for each ``i`` it uses power iterations for the vector ``p_i``, the expected probabilities to find a post of origin ``i`` on other users' NewsFeeds.
         * ``'scipy'``, use the linear system solver from the scipy.sparse library.
         * ``'push'``, use push-based method for each vector ``p_i``.
+        * ``'push_psi'`` use push-based method for the Psi_score vector.
 
     n_iter: int, optional
         Maximum number of iterations for Power-Psi and Power-NF, default=500
@@ -91,8 +92,12 @@ class PsiScore:
             self.scores, self.time, self.n_msg, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
         elif self.solver == 'power_nf':
             self.scores, self.time, self.n_msg, self.n_mult, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
-        else:
+        elif self.solver == 'power_psi':
             self.scores, self.time, self.n_msg, self.n_mult = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+        elif self.solver == 'push_psi':
+            self.scores, self.time, self.n_msg = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+        else:
+            raise ValueError('Unknown solver.')
         return self
 
     def fit_transform(self, *args, **kwargs) -> np.ndarray:

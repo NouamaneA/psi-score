@@ -6,7 +6,7 @@ from time import time
 from progressbar import progressbar
 from psi_score.utils import l_plus_m, dict_to_sparse_matrix, X
 
-from psi_score.linalg.push import push_nf_fifo
+from psi_score.linalg.push import push_nf_fifo, push_fifo
 
 def propagation_matrix(adjacency, ls, ms, lpms, solver):
     N = len(adjacency)
@@ -37,6 +37,9 @@ def propagation_matrix(adjacency, ls, ms, lpms, solver):
         else:
             c.append(ms[j]/(ls[j]+ms[j]))
             d.append(ls[j]/(ls[j]+ms[j]))
+
+    if solver == 'push_psi':
+        return A, B, c, d
 
     A = dict_to_sparse_matrix(A, shape=(N, N))
     if solver == 'push':
@@ -100,6 +103,7 @@ def get_psi_score(
         * ``'power_nf'``, for each ``i`` it uses power iterations for the vector ``p_i``, the expected probabilities to find a post of origin ``i`` on other users' NewsFeeds.
         * ``'scipy'``, use the linear system solver from the scipy.sparse library.
         * ``'push'``, use push-based method for each vector ``p_i``.
+        * ``'push_psi'`` use push-based method for the Psi_score vector.
 
     n_iter: int, optional
         Maximum number of iterations for Power-Psi and Power-NF, default=500
@@ -140,6 +144,8 @@ def get_psi_score(
     lpms = l_plus_m(adjacency, ls, ms)
     if solver == 'push':
         A_t, B_t, c, d, A = propagation_matrix(adjacency, ls, ms, lpms, solver='push')
+    elif solver == 'push_psi':
+        A, B, c, d = propagation_matrix(adjacency, ls, ms, lpms, solver='push_psi')
     else:
         A, B, c, d, Deg = propagation_matrix(adjacency, ls, ms, lpms, solver)
     t = time()
@@ -211,6 +217,19 @@ def get_psi_score(
         t = time() - t
         Psi = np.array(Psi)
         return Psi, t, n_msg, P, Q
+    
+    elif solver == 'push_psi':
+        c = {i: c[i] for i in range(N) if c[i] != 0}
+        d = np.array(d)
+        B = dict_to_sparse_matrix(B, shape=(N, N))
+        s, n_msg = push_fifo(A, c, eps=tol)
+        s = [s[i] if i in s else 0 for i in range(N)]
+        Psi = 1/N * (B.T.dot(s) + d)
+
+        t = time() - t
+
+        return Psi, t, n_msg
+
     
     else:
         raise ValueError('Unknown solver.')
