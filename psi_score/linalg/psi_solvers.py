@@ -153,8 +153,8 @@ def get_psi_score(
     n_msg = 0
 
     if solver == 'scipy':
-        P = sparse.linalg.spsolve((sparse.identity(N)-A).tocsc(), B.tocsc())
-        Psi = 1/N * (P.T.dot(c) + d)
+        s = sparse.linalg.spsolve((sparse.identity(N)-A.T).tocsc(), c)
+        Psi = 1/N * (B.T.dot(s) + d)
         t = time() - t
         return Psi, t
 
