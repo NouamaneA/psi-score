@@ -138,11 +138,12 @@ def get_psi_score(
     References
     ----------
     * Giovanidis, A., Baynat, B., Magnien, C., & Vendeville, A. (2021). 
-      Ranking Online Social Users by Their Influence. IEEE/ACM Transactions on Networking, 29(5), 2198–2214. 
+      Ranking Online Social Users by Their Influence. IEEE/ACM Transactions on Networking, 29(5), 2198-2214. 
       https://doi.org/10.1109/tnet.2021.3085201
     * Arhachoui, N., Bautista, E., Danisch, M., & Giovanidis, A. (2022). 
       A Fast Algorithm for Ranking Users by their Influence in Online Social Platforms. 
-      arXiv preprint. https://doi.org/10.48550/ARXIV.2206.09960
+      2022 IEEE/ACM International Conference on Advances in Social Networks Analysis and Mining (ASONAM), 526-533. 
+      https://doi.org/10.1109/ASONAM55673.2022.10068673
     """
 
     N = len(adjacency)
