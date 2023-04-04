@@ -13,7 +13,7 @@ class PsiScore:
         * ``'power_psi'``, power iterations for the Psi_score vector.
         * ``'power_nf'``, for each ``i`` it uses power iterations for the vector ``p_i``, the expected probabilities to find a post of origin ``i`` on other users' NewsFeeds.
         * ``'scipy'``, use the linear system solver from the scipy.sparse library.
-        * ``'push'``, use push-based method for each vector ``p_i``.
+        * ``'push_nf'``, use push-based method for each vector ``p_i``.
         * ``'push_psi'`` use push-based method for the Psi_score vector.
 
     max_iter: int, optional
@@ -34,10 +34,10 @@ class PsiScore:
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
     n_iter: int or None
         Number of iterations to reach convergence.
-    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
-        The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
-    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
-        The ``q_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
+    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push_nf'``)
+        The ``p_i`` vectors of some chosen ``i`` obtained with the push_nf or the power_nf method
+    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push_nf'``)
+        The ``q_i`` vectors of some chosen ``i`` obtained with the push_nf or the power_nf method
 
     Example
     -------
@@ -85,13 +85,13 @@ class PsiScore:
         mus:
             Re-posting activity of each node.
         ps: list
-            List of nodes ``i`` for which we want to have the ``p_i`` with the push and power_nf methods
+            List of nodes ``i`` for which we want to have the ``p_i`` with the push_nf and power_nf methods
         qs: list
-            List of nodes ``i`` for which we want to have the ``q_i`` with the push and power_nf methods
+            List of nodes ``i`` for which we want to have the ``q_i`` with the push_nf and power_nf methods
         """
         if self.solver == 'scipy':
             self.scores, self.time = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol)
-        elif self.solver == 'push':
+        elif self.solver == 'push_nf':
             self.scores, self.time, self.n_msg, self.n_iter, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
         elif self.solver == 'power_nf':
             self.scores, self.time, self.n_msg, self.n_mult, self.n_iter, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)

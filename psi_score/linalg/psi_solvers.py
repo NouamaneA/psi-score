@@ -105,7 +105,7 @@ def get_psi_score(
         * ``'power_psi'``, power iterations for the Psi_score vector.
         * ``'power_nf'``, for each ``i`` it uses power iterations for the vector ``p_i``, the expected probabilities to find a post of origin ``i`` on other users' NewsFeeds.
         * ``'scipy'``, use the linear system solver from the scipy.sparse library.
-        * ``'push'``, use push-based method for each vector ``p_i``.
+        * ``'push_nf'``, use push-based method for each vector ``p_i``.
         * ``'push_psi'`` use push-based method for the Psi_score vector.
 
     max_iter: int, optional
@@ -130,10 +130,10 @@ def get_psi_score(
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
     n_iter: int or None
         Number of iterations to reach convergence.
-    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
-        The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
-    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
-        The ``q_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
+    P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push_nf'``)
+        The ``p_i`` vectors of some chosen ``i`` obtained with the push_nf or the power_nf method
+    Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push_nf'``)
+        The ``q_i`` vectors of some chosen ``i`` obtained with the push_nf or the power_nf method
     
     References
     ----------
@@ -147,8 +147,8 @@ def get_psi_score(
 
     N = len(adjacency)
     lpms = l_plus_m(adjacency, ls, ms)
-    if solver == 'push':
-        A_t, B_t, c, d, A = propagation_matrix(adjacency, ls, ms, lpms, solver='push')
+    if solver == 'push_nf':
+        A_t, B_t, c, d, A = propagation_matrix(adjacency, ls, ms, lpms, solver='push_nf')
     elif solver == 'push_psi':
         A, B, c, d = propagation_matrix(adjacency, ls, ms, lpms, solver='push_psi')
     else:
@@ -205,7 +205,7 @@ def get_psi_score(
         if gap >= tol:
             raise RuntimeError(f'Power-Psi error: failed to converge in {max_iter} iterations.')
 
-    elif solver == 'push':
+    elif solver == 'push_nf':
         Psi = []
         P = {}
         Q = {}
