@@ -2,10 +2,11 @@
 def push_nf_fifo(i, A_t, b_i, eps: float =1e-4):
     p = {}
     n_msg = 0
+    n_iter = 0
     if i not in A_t:
-        return p, n_msg
+        return p, n_msg, n_iter
     if len(A_t[i]) == 0:
-        return p, n_msg
+        return p, n_msg, n_iter
 
     mark = {}
     FIFO = []
@@ -33,11 +34,13 @@ def push_nf_fifo(i, A_t, b_i, eps: float =1e-4):
         b_i[u] = 0
         del b_i[u]
         del mark[u]
-    return p, n_msg
+        n_iter += 1
+    return p, n_msg, n_iter
 
 def push_fifo(M, res, eps: float =1e-4):
     apr = {}
     n_msg = 0
+    n_iter = 0
 
     mark = {}
     FIFO = []
@@ -65,4 +68,5 @@ def push_fifo(M, res, eps: float =1e-4):
         res[u] = 0
         del res[u]
         del mark[u]
-    return apr, n_msg
+        n_iter += 1
+    return apr, n_msg, n_iter

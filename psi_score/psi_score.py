@@ -16,7 +16,7 @@ class PsiScore:
         * ``'push'``, use push-based method for each vector ``p_i``.
         * ``'push_psi'`` use push-based method for the Psi_score vector.
 
-    n_iter: int, optional
+    max_iter: int, optional
         Maximum number of iterations for Power-Psi and Power-NF, default=500
 
     tol: float, optional
@@ -32,6 +32,8 @@ class PsiScore:
         Number of messages (or update in the Psi-score vector), ``None`` for the scipy solver.
     n_mult: int or None
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
+    n_iter: int or None
+        Number of iterations to reach convergence.
     P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
         The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
     Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
@@ -57,15 +59,16 @@ class PsiScore:
       https://doi.org/10.1109/tnet.2021.3085201
     """
 
-    def __init__(self, solver: str = 'power_psi', n_iter: int = 500, tol: float = 1e-4):
+    def __init__(self, solver: str = 'power_psi', max_iter: int = 500, tol: float = 1e-4):
         super(PsiScore, self).__init__()
         self.solver = solver
-        self.n_iter = n_iter
+        self.max_iter = max_iter
         self.tol = tol
         self.scores = None
         self.time = None
         self.n_msg = None
         self.n_mult = None
+        self.n_iter = None
         self.P = None
         self.Q = None
 
@@ -87,15 +90,15 @@ class PsiScore:
             List of nodes ``i`` for which we want to have the ``q_i`` with the push and power_nf methods
         """
         if self.solver == 'scipy':
-            self.scores, self.time = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+            self.scores, self.time = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol)
         elif self.solver == 'push':
-            self.scores, self.time, self.n_msg, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
+            self.scores, self.time, self.n_msg, self.n_iter, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
         elif self.solver == 'power_nf':
-            self.scores, self.time, self.n_msg, self.n_mult, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
+            self.scores, self.time, self.n_msg, self.n_mult, self.n_iter, self.P, self.Q = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol, ps=ps, qs=qs)
         elif self.solver == 'power_psi':
-            self.scores, self.time, self.n_msg, self.n_mult = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+            self.scores, self.time, self.n_msg, self.n_mult, self.n_iter = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol)
         elif self.solver == 'push_psi':
-            self.scores, self.time, self.n_msg = get_psi_score(adjacency, lambdas, mus, n_iter=self.n_iter, solver=self.solver, tol=self.tol)
+            self.scores, self.time, self.n_msg, self.n_iter = get_psi_score(adjacency, lambdas, mus, max_iter=self.max_iter, solver=self.solver, tol=self.tol)
         else:
             raise ValueError('Unknown solver.')
         return self

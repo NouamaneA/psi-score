@@ -39,6 +39,7 @@ def propagation_matrix(adjacency, ls, ms, lpms, solver):
             d.append(ls[j]/(ls[j]+ms[j]))
 
     if solver == 'push_psi':
+        # A_t = dict_to_sparse_matrix(A_t, shape=(N, N))
         return A, B, c, d
 
     A = dict_to_sparse_matrix(A, shape=(N, N))
@@ -51,11 +52,12 @@ def propagation_matrix(adjacency, ls, ms, lpms, solver):
         Deg = np.array(Deg)
         return A, B, c, d, Deg
 
-def power_newsfeed(A, b_i, Deg, n_iter=500, tol=1e-4):
+def power_newsfeed(A, b_i, Deg, max_iter=500, tol=1e-4):
     p_i = b_i.copy()
     n_mult = 0
     n_msg = 0
-    for _ in range(n_iter):
+    n_iter = 0
+    for _ in range(max_iter):
         p_i_old = p_i.copy()
         nnz_idx = np.where(p_i != 0)[0]
         n_msg += Deg[nnz_idx].sum()     
@@ -63,9 +65,10 @@ def power_newsfeed(A, b_i, Deg, n_iter=500, tol=1e-4):
         n_mult += 1
         gap = np.sum(abs(p_i - p_i_old))
         # gap = norm(p_i - p_i_old, ord=1)
+        n_iter += 1
         if gap < tol:
-            return p_i, n_msg, n_mult
-    raise RuntimeError(f'Power-NF error: failed to converge in {n_iter} iterations.')
+            return p_i, n_msg, n_mult, n_iter
+    raise RuntimeError(f'Power-NF error: failed to converge in {max_iter} iterations.')
 
 def wall_steady_state(i, c, p_i, d):
     if isinstance(p_i, dict):
@@ -84,7 +87,7 @@ def wall_steady_state(i, c, p_i, d):
 
 def get_psi_score(
         adjacency: dict[list], ls: Union[list, np.ndarray], 
-        ms: Union[list, np.ndarray], n_iter: int =500, 
+        ms: Union[list, np.ndarray], max_iter: int =500, 
         tol: float =1e-4, solver: str ='power_psi',
         ps: list[int] =[], qs: list[int] =[] 
     ) -> tuple:
@@ -105,7 +108,7 @@ def get_psi_score(
         * ``'push'``, use push-based method for each vector ``p_i``.
         * ``'push_psi'`` use push-based method for the Psi_score vector.
 
-    n_iter: int, optional
+    max_iter: int, optional
         Maximum number of iterations for Power-Psi and Power-NF, default=500
         
     tol: float, optional
@@ -125,6 +128,8 @@ def get_psi_score(
         Number of messages (or update in the Psi-score vector), ``None`` for the scipy solver.
     n_mult: int or None
         Number of matrix-vector multiplications to reach convergence, ``None`` for the scipy solver.
+    n_iter: int or None
+        Number of iterations to reach convergence.
     P: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
         The ``p_i`` vectors of some chosen ``i`` obtained with the push or the power_nf method
     Q: dict[np.ndarray] (with ``solver='power_nf'``) or dict[dict] (with ``solver='push'``)
@@ -151,6 +156,7 @@ def get_psi_score(
     t = time()
     n_mult = 0
     n_msg = 0
+    n_iter = 0
 
     if solver == 'scipy':
         s = sparse.linalg.spsolve((sparse.identity(N)-A.T).tocsc(), c)
@@ -165,9 +171,10 @@ def get_psi_score(
         Q = {}
         for i in progressbar(range(N)):
             b_i = B.dot(X(i, N))
-            p_i, n_msg_i, n_mult_i = power_newsfeed(A, b_i, Deg, n_iter=n_iter, tol=tol)
+            p_i, n_msg_i, n_mult_i, n_iter_i = power_newsfeed(A, b_i, Deg, max_iter=max_iter, tol=tol)
             n_mult += n_mult_i
             n_msg += n_msg_i
+            n_iter += n_iter_i
             q_i = wall_steady_state(i, c, p_i, d)
             Psi.append(1/N * np.sum(q_i))
             if i in ps:
@@ -175,13 +182,13 @@ def get_psi_score(
             if i in qs:
                 Q[i] = q_i
         t = time() - t
-        return Psi, t, n_msg, n_mult, P, Q
+        return Psi, t, n_msg, n_mult, n_iter, P, Q
 
     elif solver == 'power_psi':
         At = A.T 
         s = c
         B_norm = norm(B, ord=1)
-        for i in progressbar(range(n_iter)):
+        for i in progressbar(range(max_iter)):
             s_old = s.copy()
             nnz_idx = np.where(s != 0)[0]
             n_msg += Deg[nnz_idx].sum()
@@ -189,13 +196,14 @@ def get_psi_score(
             n_mult += 1
             gap = sum(abs(s - s_old))
             gap = gap * B_norm
+            n_iter += 1
             if gap < tol:
                 Psi = 1/N * (B.T.dot(s) + d)
                 n_mult += 1
                 t = time() - t
-                return Psi, t, n_msg, n_mult
+                return Psi, t, n_msg, n_mult, n_iter
         if gap >= tol:
-            raise RuntimeError(f'Power-Psi error: failed to converge in {n_iter} iterations.')
+            raise RuntimeError(f'Power-Psi error: failed to converge in {max_iter} iterations.')
 
     elif solver == 'push':
         Psi = []
@@ -204,8 +212,9 @@ def get_psi_score(
         tol = tol * (1 - np.max(A.sum(axis=1)))
         for i in progressbar(range(N)):
             if i in B_t:
-                p_i, n_msg_i = push_nf_fifo(i, A_t, B_t[i], eps=tol)
+                p_i, n_msg_i, n_iter_i = push_nf_fifo(i, A_t, B_t[i], eps=tol)
                 n_msg += n_msg_i
+                n_iter += n_iter_i
             else:
                 p_i = dict()
             q_i = wall_steady_state(i, c, p_i, d)
@@ -216,19 +225,21 @@ def get_psi_score(
                 Q[i] = q_i
         t = time() - t
         Psi = np.array(Psi)
-        return Psi, t, n_msg, P, Q
+        return Psi, t, n_msg, n_iter, P, Q
     
     elif solver == 'push_psi':
         c = {i: c[i] for i in range(N) if c[i] != 0}
         d = np.array(d)
         B = dict_to_sparse_matrix(B, shape=(N, N))
-        s, n_msg = push_fifo(A, c, eps=tol)
+        A_t = dict_to_sparse_matrix(A, shape=(N, N))
+        tol = tol * (1 - np.max(A_t.sum(axis=1)))
+        s, n_msg, n_iter = push_fifo(A, c, eps=tol)
         s = [s[i] if i in s else 0 for i in range(N)]
         Psi = 1/N * (B.T.dot(s) + d)
 
         t = time() - t
 
-        return Psi, t, n_msg
+        return Psi, t, n_msg, n_iter
 
     
     else:
