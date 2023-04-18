@@ -11,7 +11,7 @@ from psi_score.linalg.push import push_nf_fifo, push_fifo
 def propagation_matrix(adjacency, ls, ms, lpms, solver):
     N = len(adjacency)
     A = dict()
-    if solver == 'push':
+    if solver == 'push_nf':
         A_t = {i: {} for i in adjacency}
         B_t = {i: {} for i in adjacency}
     else:
@@ -23,7 +23,7 @@ def propagation_matrix(adjacency, ls, ms, lpms, solver):
         A[j] = dict()
         for k in adjacency[j]:
             A[j][k] = ms[k] / lpms[j]
-            if solver == 'push':
+            if solver == 'push_nf':
                 if ms[k] != 0:
                     A_t[k][j] = ms[k] / lpms[j]
                 if ls[k] != 0:
@@ -43,7 +43,7 @@ def propagation_matrix(adjacency, ls, ms, lpms, solver):
         return A, B, c, d
 
     A = dict_to_sparse_matrix(A, shape=(N, N))
-    if solver == 'push':
+    if solver == 'push_nf':
         return A_t, B_t, c, d, A
     else:
         B = dict_to_sparse_matrix(B, shape=(N, N))
